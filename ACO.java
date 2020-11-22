@@ -8,6 +8,8 @@ public class ACO{
     Dataset dataset;
     Fitness fitness;
     ArrayList<Ant> ants;
+    ArrayList<Integer> bestFitnessValTrail;
+    private double bestFitnessVal;
     private double c;
     private double alpha;
     private double beta;
@@ -27,7 +29,8 @@ public class ACO{
         init();
     }
     private void init(){
-        arr = new ArrayList<ArrayList<ArrayList<Double>>>(); 
+        cost = new ArrayList<ArrayList<ArrayList<Double>>>(); 
+        pher = new ArrayList<ArrayList<ArrayList<Double>>>(); 
         wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
         aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
 
@@ -95,7 +98,7 @@ public class ACO{
                 dist += wtList.get(attr)*dataset.getItem(0,j,attr);
         else
             for(int attr = 0; attr < dataset.getItemsPerRow(); attr++){
-                switch(aggList[attr]){
+                switch(aggList.get(attr)){
                     case "sum": dist += wtList.get(attr)*(dataset.getItem(task,i,attr)+dataset.getItem(task+1,j,attr));break;
                     case "mul": dist += wtList.get(attr)*(dataset.getItem(task,i,attr)*dataset.getItem(task+1,j,attr));break;
                     case "min": dist += wtList.get(attr)*Math.min(dataset.getItem(task,i,attr),dataset.getItem(task+1,j,attr));break;
@@ -107,19 +110,18 @@ public class ACO{
 
 
     public void run(){
-        for(int i = 0; i < ; i++){
+        for(int i = 0; i < 3; i++){
             moveAnts();
             updateTrails();
-            updateBest();
         }
     }
 
     private void moveAnts(){
-        for(int ind = 0;ind < taskNum; i++){
+        for(int ind = 0;ind < taskNum; ind++){
             for(Ant ant : ants){
                 // int selection = makeSelection(arr.get(ind).get(ant.getState()));
                 int selection = makeSelection(ind,ant.getState());
-                ants.visit(ind,selection);
+                ant.visit(ind,selection);
             }
         }
         for(Ant ant : ants) ant.setState(0);
@@ -139,23 +141,32 @@ public class ACO{
             ArrayList<ArrayList<Double>> path;
             ArrayList<Integer> trail = ant.getTrail();
             for(int ind =0; ind < taskNum;ind++)
-                path.add(dataset.getItem(ind,trail[ind]));
+                path.add(dataset.getItem(ind,trail.get(ind)));
             fitness = new Fitness(path,aggList,wtList);
-
-            double contrib = Q/fitness.calculate();
-            pher.get(0).get(0).set(i,pher.get(0).get(0).get(trail[0])+contrib);
+            double fitnessVal = fitness.calculate(); 
+            updateBest(trail,fitnessVal);
+            double contrib = Q/fitnessVal;
+            pher.get(0).get(0).set(i,pher.get(0).get(0).get(trail.get(0))+contrib);
             for(int i = 1; i < taskNum; i++){
-                pher.get(i).get(trail[i-1])
-                    .set(trail[i],
-                    pher.get(i).get(trail[i-1]).get(trail[i])+contrib);
+                pher.get(i).get(trail.get(i-1))
+                    .set(trail.get(i),
+                    pher.get(i).get(trail.get(i-1)).get(trail.get(i))+contrib);
             }
         }
     }
+
+    private void updateBest(ArrayList<Integer> trail,double val){
+        if(bestFitnessVal < val){
+            bestFitnessVal = val;
+            bestFitnessValTrail = new ArrayList<Integer>(trail);
+        }
+    }
+
     private int makeSelection(int task,int state){
 
         // randomly choose if we should make a random decision
         if(Math.random() < randFactor){
-            return Math.random()*dataset.getItemsPerRow();
+            return int(Math.random()*double(dataset.getItemsPerRow()));
         }
 
         //Calculate Probablities
@@ -164,19 +175,19 @@ public class ACO{
         for(int ch =0 ;ch < dataset.getItemsPerTask();ch++){
             pheromone +=    (
                             Math.pow(pher.get(task).get(ch),alpha)
-                            * Math.pow(1/cost.get(task).get(ch),beta)
+                            * Math.pow(1.0/cost.get(task).get(ch),beta)
                             );
         }
 
         for(int ch =0 ;ch < dataset.getItemsPerTask();ch++){
             double numerator = Math.pow(pher.get(task).get(ch),alpha)
-            * Math.pow(1/cost.get(task).get(ch),beta)
+            * Math.pow(1.0/cost.get(task).get(ch),beta);
             prob.add(numerator/pheromone);
         }
 
         //making selection
         double total = 0;
-        int randVal = Math.random();
+        double randVal = Math.random();
         for(int i = 0; i < prob.size(); i++){
             total += prob.get(i);
             if (total >= randVal)
