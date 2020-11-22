@@ -1,0 +1,29 @@
+Manifest-Version: 1.0
+Export-Package: com.opencsv.bean;uses:="com.opencsv,com.opencsv.except
+ ions";version="3.8.0",com.opencsv.bean.customconverter;uses:="com.ope
+ ncsv.bean,com.opencsv.exceptions";version="3.8.0",com.opencsv;uses:="
+ com.opencsv.enums,com.opencsv.stream.reader";version="3.8.0",com.open
+ csv.enums;version="3.8.0",com.opencsv.exceptions;version="3.8.0",com.
+ opencsv.stream.reader;version="3.8.0"
+Built-By: scott
+Tool: Bnd-3.0.0.201509101326
+Bundle-Name: opencsv
+Created-By: Apache Maven Bundle Plugin
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Build-Jdk: 1.7.0_06
+Bundle-Version: 3.8.0
+Bnd-LastModified: 1465157546780
+Bundle-ManifestVersion: 2
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-Description: A simple library for reading and writing CSV in Ja
+ va
+Bundle-SymbolicName: com.opencsv
+Import-Package: com.opencsv,com.opencsv.bean,com.opencsv.enums,com.ope
+ ncsv.exceptions,com.opencsv.stream.reader,javax.xml.datatype,org.apac
+ he.commons.beanutils;version="[1.9,2)",org.apache.commons.beanutils.c
+ onverters;version="[1.9,2)",org.apache.commons.beanutils.locale.conve
+ rters;version="[1.9,2)",org.apache.commons.lang3;version="[3.4,4)",or
+ g.apache.commons.lang3.reflect;version="[3.4,4)",org.apache.commons.l
+ ang3.text;version="[3.4,4)"
+Archiver-Version: Plexus Archiver
+
