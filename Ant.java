@@ -5,11 +5,14 @@ public class Ant{
     private int state;
 
     public Ant(int taskNum){
-        trail = new ArrayList<Integer>(taskNum);
+        trail = new ArrayList<Integer>();
+        for(int i = 0;i < taskNum; i++)
+            trail.add(0);
         state = 0;
     }
 
     public void visit(int task, int value) {
+        // System.out.println(task + " " + trail.size());
         trail.set(task, value);
         state = value;
     }

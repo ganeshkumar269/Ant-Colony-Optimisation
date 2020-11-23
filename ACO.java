@@ -18,6 +18,7 @@ public class ACO{
     private double antFactor;
     private double randFactor;
     private double numOfAnts;
+    private int numOfItr;
 
     public int taskNum;
     public ACO(){
@@ -29,36 +30,47 @@ public class ACO{
         init();
     }
     private void init(){
+        numOfItr = 3;
         cost = new ArrayList<ArrayList<ArrayList<Double>>>(); 
         pher = new ArrayList<ArrayList<ArrayList<Double>>>(); 
         wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
         aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
+        ants = new ArrayList<Ant>();
 
         c = 1.0;
         alpha = 1.0;
-        beta = 1.0;
+        beta = 0.5;
         evap = 0.5;
         Q = 500;
         antFactor = 0.8;
         randFactor = 0.1;
         numOfAnts = 10;
-        ants = new ArrayList<Ant>();
-        for(int i = 0;i < numOfAnts;i++)
-            ants.add(new Ant(taskNum));
-        generateMatrices();
         dataset = new Dataset(taskNum);
+        bestFitnessVal = -Double.MAX_VALUE;
+        generateMatrices();
+        
     }
 
     public void setTaskNum(int _taskNum){taskNum = _taskNum;}
+    public void setNumOfItr(int _numOfItr){numOfItr = _numOfItr;}
+    public void setNumOfAnts(int _numOfAnts){
+        numOfAnts = _numOfAnts;
+    }
+
+    public void setAnts(){
+        ants.clear();
+        for(int i = 0;i < numOfAnts;i++)
+            ants.add(new Ant(taskNum));
+    }
 
     private void generateMatrices(){
-        cost.add(generateCostMatrix(-1,1,dataset.getItemsPerTask()));
+        cost.add(generateCostMatrix(-1,1,dataset.getRowsPerTask()));
         for(int i = 0; i < taskNum-1; i++)
-            cost.add(generateCostMatrix(i,dataset.getItemsPerTask(),dataset.getItemsPerTask()));
+            cost.add(generateCostMatrix(i,dataset.getRowsPerTask(),dataset.getRowsPerTask()));
         
-        pher.add(generatePherMatrix(-1,1,dataset.getItemsPerTask()));
+        pher.add(generatePherMatrix(-1,1,dataset.getRowsPerTask()));
         for(int i = 0; i < taskNum-1; i++)
-            pher.add(generatePherMatrix(i,dataset.getItemsPerTask(),dataset.getItemsPerTask()));
+            pher.add(generatePherMatrix(i,dataset.getRowsPerTask(),dataset.getRowsPerTask()));
     }
 
 
@@ -110,9 +122,10 @@ public class ACO{
 
 
     public void run(){
-        for(int i = 0; i < 3; i++){
+        for(int i = 0; i < numOfItr; i++){
             moveAnts();
             updateTrails();
+            System.out.println("Iteration "+i+" Best Fitness So far: " + bestFitnessVal);
         }
     }
 
@@ -138,15 +151,16 @@ public class ACO{
 
         
         for(Ant ant : ants){
-            ArrayList<ArrayList<Double>> path;
+            ArrayList<ArrayList<Double>> path = new ArrayList<ArrayList<Double>>();
             ArrayList<Integer> trail = ant.getTrail();
             for(int ind =0; ind < taskNum;ind++)
-                path.add(dataset.getItem(ind,trail.get(ind)));
+                path.add(dataset.getRow(ind,trail.get(ind)));
             fitness = new Fitness(path,aggList,wtList);
             double fitnessVal = fitness.calculate(); 
+            // System.out.println("Current Fitness: "+ fitnessVal);
             updateBest(trail,fitnessVal);
-            double contrib = Q/fitnessVal;
-            pher.get(0).get(0).set(i,pher.get(0).get(0).get(trail.get(0))+contrib);
+            double contrib = fitnessVal;
+            pher.get(0).get(0).set(trail.get(0),pher.get(0).get(0).get(trail.get(0))+contrib);
             for(int i = 1; i < taskNum; i++){
                 pher.get(i).get(trail.get(i-1))
                     .set(trail.get(i),
@@ -166,22 +180,22 @@ public class ACO{
 
         // randomly choose if we should make a random decision
         if(Math.random() < randFactor){
-            return int(Math.random()*double(dataset.getItemsPerRow()));
+            return (int)(Math.random()*(double)dataset.getItemsPerRow());
         }
 
         //Calculate Probablities
         ArrayList<Double> prob = new ArrayList<Double>();
         double pheromone = 0.0;
-        for(int ch =0 ;ch < dataset.getItemsPerTask();ch++){
+        for(int ch =0 ;ch < dataset.getRowsPerTask();ch++){
             pheromone +=    (
-                            Math.pow(pher.get(task).get(ch),alpha)
-                            * Math.pow(1.0/cost.get(task).get(ch),beta)
+                            Math.pow(pher.get(task).get(state).get(ch),alpha)
+                            * Math.pow(1.0/cost.get(task).get(state).get(ch),beta)
                             );
         }
 
-        for(int ch =0 ;ch < dataset.getItemsPerTask();ch++){
-            double numerator = Math.pow(pher.get(task).get(ch),alpha)
-            * Math.pow(1.0/cost.get(task).get(ch),beta);
+        for(int ch =0 ;ch < dataset.getRowsPerTask();ch++){
+            double numerator = Math.pow(pher.get(task).get(state).get(ch),alpha)
+            * Math.pow(1.0/cost.get(task).get(state).get(ch),beta);
             prob.add(numerator/pheromone);
         }
 
@@ -194,5 +208,10 @@ public class ACO{
                 return i;
         }
         return 0;
+    }
+
+    public void printMetrics(){
+        System.out.println("Best Fitness: " + bestFitnessVal);
+        System.out.println(bestFitnessValTrail);
     }
 }

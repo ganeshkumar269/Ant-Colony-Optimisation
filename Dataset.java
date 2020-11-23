@@ -41,10 +41,14 @@ public class Dataset{
     }   
 
     public double getItem(int task,int index,int attr){
-        return _Data.get(task*getItemsPerTask()+index).get(attr);
+        return _Data.get(task*getRowsPerTask()+index).get(attr);
     }
 
-    public int getItemsPerTask(){
+    public ArrayList<Double> getRow(int task,int index){
+        return _Data.get(task*getRowsPerTask()+index);
+    }
+
+    public int getRowsPerTask(){
         return _Data.size()/taskNum;
     }
 

@@ -8,8 +8,11 @@ import java.util.*;
 
 class test{
     public static void main(String... args){
-        Dataset dataset = new Dataset();
-        System.out.println(dataset.getItemsPerTask());
-        System.out.println(dataset.getItem(0,3,1));
+        ACO aco = new ACO(20);
+        aco.setNumOfItr(10);
+        aco.setNumOfAnts((int)(200));
+        aco.setAnts();
+        aco.run();
+        aco.printMetrics();
     }
 }
