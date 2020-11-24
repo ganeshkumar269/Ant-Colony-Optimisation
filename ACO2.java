@@ -1,13 +1,13 @@
 import java.util.*;
 
-public class ACO{
+public class ACO2{
     ArrayList<ArrayList<ArrayList<Double>>> cost;
     ArrayList<ArrayList<ArrayList<Double>>> pher;
     ArrayList<Double> wtList;
     ArrayList<String> aggList;
     Dataset dataset;
     Fitness fitness;
-    ArrayList<Ant> ants;
+    // ArrayList<Ant> ants;
     ArrayList<Integer> bestFitnessValTrail;
     private double bestFitnessVal;
     private double c;
@@ -21,11 +21,11 @@ public class ACO{
     private int numOfItr;
 
     public int taskNum;
-    public ACO(){
+    public ACO2(){
         taskNum = 10;
         init();
     }
-    public ACO(int _taskNum){
+    public ACO2(int _taskNum){
         taskNum = _taskNum;
         init();
     }
@@ -35,7 +35,7 @@ public class ACO{
         pher = new ArrayList<ArrayList<ArrayList<Double>>>(); 
         wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
         aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
-        ants = new ArrayList<Ant>();
+        // ants = new ArrayList<Ant>();
 
         c = 1.0;
         alpha = 1.0;
@@ -57,11 +57,11 @@ public class ACO{
         numOfAnts = _numOfAnts;
     }
 
-    public void setAnts(){
-        ants.clear();
-        for(int i = 0;i < numOfAnts;i++)
-            ants.add(new Ant(taskNum));
-    }
+    // public void setAnts(){
+    //     ants.clear();
+    //     for(int i = 0;i < numOfAnts;i++)
+    //         ants.add(new Ant(taskNum));
+    // }
 
     private void generateMatrices(){
         cost.add(generateCostMatrix(-1,1,dataset.getRowsPerTask()));
@@ -121,53 +121,54 @@ public class ACO{
     }
 
 
-    public void run(){
-        for(int i = 0; i < numOfItr; i++){
-            moveAnts();
-            updateTrails();
-            System.out.println("Iteration "+i+" Best Fitness So far: " + bestFitnessVal);
-        }
-    }
+    // public void run(){
+    //     for(int i = 0; i < numOfItr; i++){
+    //         moveAnts();
+    //         updateTrails();
+    //         System.out.println("Iteration "+i+" Best Fitness So far: " + bestFitnessVal);
+    //     }
+    // }
 
-    private void moveAnts(){
-        for(int ind = 0;ind < taskNum; ind++){
-            for(Ant ant : ants){
-                // int selection = makeSelection(arr.get(ind).get(ant.getState()));
-                int selection = makeSelection(ind,ant.getState());
-                ant.visit(ind,selection);
-            }
-        }
-        for(Ant ant : ants) ant.setState(0);
+    // private void moveAnts(){
+    //     for(int ind = 0;ind < taskNum; ind++){
+    //         for(Ant ant : ants){
+    //             // int selection = makeSelection(arr.get(ind).get(ant.getState()));
+    //             int selection = makeSelection(ind,ant.getState());
+    //             ant.visit(ind,selection);
+    //         }
+    //     }
+    //     for(Ant ant : ants) ant.setState(0);
 
-    }
+    // }
 
-    private void updateTrails(){
-        //Evaporation
+    //Evaporation
+    public void evaporate(){
         for(int i =0 ;i < pher.size();i++)
             for(int j = 0;j < pher.get(i).size();j++)
                 for(int k = 0; k < pher.get(i).get(j).size();k++)
-                    pher.get(i).get(j).set(k,pher.get(i).get(j).get(k)*evap);
+                pher.get(i).get(j).set(k,pher.get(i).get(j).get(k)*evap);
 
-
-        
-        for(Ant ant : ants){
-            ArrayList<ArrayList<Double>> path = new ArrayList<ArrayList<Double>>();
-            ArrayList<Integer> trail = ant.getTrail();
-            for(int ind =0; ind < taskNum;ind++)
-                path.add(dataset.getRow(ind,trail.get(ind)));
-            fitness = new Fitness(path,aggList,wtList);
-            double fitnessVal = fitness.calculate(); 
-            // System.out.println("Current Fitness: "+ fitnessVal);
-            updateBest(trail,fitnessVal);
-            double contrib = fitnessVal;
-            pher.get(0).get(0).set(trail.get(0),pher.get(0).get(0).get(trail.get(0))+contrib);
-            for(int i = 1; i < taskNum; i++){
-                pher.get(i).get(trail.get(i-1))
-                    .set(trail.get(i),
-                    pher.get(i).get(trail.get(i-1)).get(trail.get(i))+contrib);
-            }
-        }
     }
+
+    // private void updateTrails(){
+    //     for(Ant ant : ants){
+    //         ArrayList<ArrayList<Double>> path = new ArrayList<ArrayList<Double>>();
+    //         ArrayList<Integer> trail = ant.getTrail();
+    //         for(int ind =0; ind < taskNum;ind++)
+    //             path.add(dataset.getRow(ind,trail.get(ind)));
+    //         fitness = new Fitness(path,aggList,wtList);
+    //         double fitnessVal = fitness.calculate(); 
+    //         // System.out.println("Current Fitness: "+ fitnessVal);
+    //         updateBest(trail,fitnessVal);
+    //         double contrib = fitnessVal;
+    //         pher.get(0).get(0).set(trail.get(0),pher.get(0).get(0).get(trail.get(0))+contrib);
+    //         for(int i = 1; i < taskNum; i++){
+    //             pher.get(i).get(trail.get(i-1))
+    //                 .set(trail.get(i),
+    //                 pher.get(i).get(trail.get(i-1)).get(trail.get(i))+contrib);
+    //         }
+    //     }
+    // }
 
     private void updateBest(ArrayList<Integer> trail,double val){
         if(bestFitnessVal < val){
@@ -176,39 +177,39 @@ public class ACO{
         }
     }
 
-    private int makeSelection(int task,int state){
+    // private int makeSelection(int task,int state){
 
-        // randomly choose if we should make a random decision
-        if(Math.random() < randFactor){
-            return (int)(Math.random()*(double)dataset.getItemsPerRow());
-        }
+    //     // randomly choose if we should make a random decision
+    //     if(Math.random() < randFactor){
+    //         return (int)(Math.random()*(double)dataset.getItemsPerRow());
+    //     }
 
-        //Calculate Probablities
-        ArrayList<Double> prob = new ArrayList<Double>();
-        double pheromone = 0.0;
-        for(int ch =0 ;ch < dataset.getRowsPerTask();ch++){
-            pheromone +=    (
-                            Math.pow(pher.get(task).get(state).get(ch),alpha)
-                            * Math.pow(cost.get(task).get(state).get(ch),beta)
-                            );
-        }
+    //     //Calculate Probablities
+    //     ArrayList<Double> prob = new ArrayList<Double>();
+    //     double pheromone = 0.0;
+    //     for(int ch =0 ;ch < dataset.getRowsPerTask();ch++){
+    //         pheromone +=    (
+    //                         Math.pow(pher.get(task).get(state).get(ch),alpha)
+    //                         * Math.pow(cost.get(task).get(state).get(ch),beta)
+    //                         );
+    //     }
 
-        for(int ch =0 ;ch < dataset.getRowsPerTask();ch++){
-            double numerator = Math.pow(pher.get(task).get(state).get(ch),alpha)
-            * Math.pow(cost.get(task).get(state).get(ch),beta);
-            prob.add(numerator/pheromone);
-        }
+    //     for(int ch =0 ;ch < dataset.getRowsPerTask();ch++){
+    //         double numerator = Math.pow(pher.get(task).get(state).get(ch),alpha)
+    //         * Math.pow(cost.get(task).get(state).get(ch),beta);
+    //         prob.add(numerator/pheromone);
+    //     }
 
-        //making selection
-        double total = 0;
-        double randVal = Math.random();
-        for(int i = 0; i < prob.size(); i++){
-            total += prob.get(i);
-            if (total >= randVal)
-                return i;
-        }
-        return 0;
-    }
+    //     //making selection
+    //     double total = 0;
+    //     double randVal = Math.random();
+    //     for(int i = 0; i < prob.size(); i++){
+    //         total += prob.get(i);
+    //         if (total >= randVal)
+    //             return i;
+    //     }
+    //     return 0;
+    // }
 
     public void printMetrics(){
         System.out.println("Best Fitness: " + bestFitnessVal);

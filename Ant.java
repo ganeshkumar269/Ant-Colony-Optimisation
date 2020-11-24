@@ -18,7 +18,7 @@ public class Ant{
     }
 
     public int getState(){return state;}
-    public ArrayList<Integer> getTrail(){return trail;}
-
     public void setState(int _state){state = _state;}
+
+    public ArrayList<Integer> getTrail(){return trail;}
 }
