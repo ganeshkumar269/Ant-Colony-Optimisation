@@ -19,6 +19,16 @@ class testing2{
 
 class temp {
     public static void main(String... args){
-        System.out.println(testing.value);
+        ArrayList<Integer> arr = new ArrayList<Integer>();
+        ArrayList<ArrayList<Integer>> arr2 = new ArrayList<ArrayList<Integer>>();
+        for(int i = 0; i< 3; i++){
+            arr = new ArrayList<Integer>();
+            arr.add(i);
+            arr2.add(arr);
+        }
+        for(ArrayList<Integer> i : arr2){
+            for(int j : i)
+                System.out.println(j);
+        }
     }
 }

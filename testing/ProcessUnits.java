@@ -29,6 +29,23 @@ public class ProcessUnits {
    Text,                /*Output key Type*/ 
    Text>        /*Output value Type*/ 
    {
+      ArrayList<ArrayList<ArrayList<Double>>> cost;
+      ArrayList<ArrayList<ArrayList<Double>>> pher;
+      ArrayList<ArrayList<Double>> datasetArray;
+
+      protected void setup(Mapper.Context context)
+        throws IOException, InterruptedException {
+         cost = new ArrayList<ArrayList<ArrayList<Double>>>(); 
+         pher = new ArrayList<ArrayList<ArrayList<Double>>>(); 
+         datasetArray = new ArrayList<ArrayList<Double>>();
+         
+         String inputCost = context.getConfiguration().get("cost");
+         String inputPher = context.getConfiguration().get("pher");
+         String inputDataset = context.getConfiguration().get("cost");
+         
+      }
+
+
       //Map function 
       public void map(LongWritable key, Text value, 
       Context context) throws IOException,InterruptedException { 
@@ -40,12 +57,7 @@ public class ProcessUnits {
          int taskNum = Integer.parseInt(s.nextToken());
          int w = Integer.parseInt(s.nextToken());
          int h = Integer.parseInt(s.nextToken());
-         ArrayList<ArrayList<ArrayList<Double>>> cost;
-         ArrayList<ArrayList<ArrayList<Double>>> pher;
-         ArrayList<ArrayList<Double>> datasetArray;
-         cost = new ArrayList<ArrayList<ArrayList<Double>>>(); 
-         pher = new ArrayList<ArrayList<ArrayList<Double>>>(); 
-         datasetArray = new ArrayList<ArrayList<Double>>();
+         
          ArrayList<Double> wtList;
          ArrayList<String> aggList;
          wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
@@ -59,9 +71,9 @@ public class ProcessUnits {
          tempMatrix.add(tempRow);
          cost.add(tempMatrix);
          for(int i = 0;i < taskNum-1;i++){
-            tempMatrix.clear();
+            tempMatrix = new ArrayList<ArrayList<Double>>();
             for(int j = 0; j < w; j++){
-               tempRow.clear();
+               tempRow = new ArrayList<Double>();
                for(int k = 0; k < w; k++){
                   tempRow.add(Double.parseDouble(s.nextToken()));
                }
@@ -70,17 +82,17 @@ public class ProcessUnits {
             cost.add(tempMatrix);
          }
 
-         tempMatrix.clear();
-         tempRow.clear();
+         tempRow = new ArrayList<Double>();
+         tempMatrix = new ArrayList<ArrayList<Double>>();
 
          for(int i = 0; i < w; i++)
             tempRow.add(Double.parseDouble(s.nextToken()));
          tempMatrix.add(tempRow);
          pher.add(tempMatrix);
          for(int i = 0;i < taskNum-1;i++){
-            tempMatrix.clear();
+            tempMatrix = new ArrayList<ArrayList<Double>>();
             for(int j = 0; j < w; j++){
-               tempRow.clear();
+               tempRow = new ArrayList<Double>();
                for(int k = 0; k < w; k++){
                   tempRow.add(Double.parseDouble(s.nextToken()));
                }
@@ -89,9 +101,8 @@ public class ProcessUnits {
             pher.add(tempMatrix);
          }
 
-         tempRow.clear();
          for(int i = 0;i < 2500;i++){
-            tempRow.clear();
+            tempRow = new ArrayList<Double>();
             for(int j = 0;j < 5; j++){
                tempRow.add(Double.parseDouble(s.nextToken()));
             }
@@ -198,5 +209,20 @@ public class ProcessUnits {
       // FileInputFormat.setInputPaths(conf, new Path(args[1])); 
       // FileOutputFormat.setOutputPath(conf, new Path(args[1]+"1")); 
       // JobClient.runJob(conf); 
-   } 
+
+      Job job2 = Job.getInstance(config, "testing_stuff2");  
+		if (fs.exists(new Path(args[1]+"1"))) {
+			fs.delete(new Path(String.valueOf(args[1]+"1")), true);
+		}    
+      job2.setJarByClass(ProcessUnits.class);
+      job2.setMapperClass(E_EMapper2.class); 
+      job2.setCombinerClass(E_EReduce2.class); 
+      job2.setReducerClass(E_EReduce2.class);
+      job2.setOutputKeyClass(Text.class);
+      job2.setOutputValueClass(Text.class);
+      // job.setNumMapTasks(1);
+      // job.setNumReduceTasks(1);
+      FileInputFormat.addInputPath(job2, new Path(args[1]));
+      FileOutputFormat.setOutputPath(job2, new Path(args[1]+"1"));
+      job.waitForCompletion(true);   } 
 }

@@ -15,9 +15,10 @@ class genMatrix{
         aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
         cost = new ArrayList<ArrayList<ArrayList<Double>>>();
         pher = new ArrayList<ArrayList<ArrayList<Double>>>();
-        System.out.println(args.length);
+        int numOfAnts = 10;
+        if(args.length > 0)
+            numOfAnts = Integer.parseInt(args[0]);
         generateMatrices();
-        int numOfAnts = 1;
         PrintWriter pw = new PrintWriter("data.txt");
         String qwsData = new String();
         BufferedReader br = new BufferedReader(new FileReader("qws2_csv_normalised_4.csv"));
