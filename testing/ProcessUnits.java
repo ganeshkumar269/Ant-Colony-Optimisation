@@ -120,11 +120,11 @@ public class ProcessUnits {
 
          Ant2 ant = new Ant2(taskNum,cost,pher,wtList,aggList,datasetArray);
          ant.move();
-         String result = new String();
-         result = String.valueOf(ant.getFitness());
-         // for(int j = 0; j < taskNum; j++)
-         //    result = result + String.valueOf(ant.trail.get(j)) + " ";
-         context.write(new Text(antid),new Text(result));
+         StringBuilder result = new StringBuilder();
+            result.append(String.valueOf(ant.getFitness()) + " ") ;
+         for(int j = 0; j < taskNum; j++)
+            result.append(String.valueOf(ant.trail.get(j)) + " ");
+         context.write(new Text(antid),new Text(result.toString()));
          // String year = s.nextToken(); 
          // while(s.hasMoreTokens()) {
          //    output.collect(new Text(s.nextToken()), new IntWritable(1));          
@@ -206,6 +206,7 @@ public class ProcessUnits {
       dataset = new Dataset(taskNum);
       itemsPerRow = 5;
       rowsPerTask = 2500/taskNum;
+      Double bestValSofar = 0.0;
       wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
       aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
       cost = new ArrayList<ArrayList<ArrayList<Double>>>();
@@ -244,20 +245,48 @@ public class ProcessUnits {
       config.set("pher",pw2.toString());
       config.set("dataset",qwsData.toString());
       config.set("taskNum",String.valueOf(taskNum));
-      Job job = Job.getInstance(config, "testing_stuff");  
-      FileSystem fs = FileSystem.get(config);
-		if (fs.exists(new Path(args[1]))) {
-			fs.delete(new Path(String.valueOf(args[1])), true);
-		}    
-      job.setJarByClass(ProcessUnits.class);
-      job.setMapperClass(E_EMapper.class); 
-      job.setCombinerClass(E_EReduce.class); 
-      job.setReducerClass(E_EReduce.class);
-      job.setOutputKeyClass(Text.class);
-      job.setOutputValueClass(Text.class);
-      FileInputFormat.addInputPath(job, new Path(args[0]));
-      FileOutputFormat.setOutputPath(job, new Path(args[1]));
-      job.waitForCompletion(true);
+      int itr = 1;
+      for(int i = 0;i < itr; i++){
+
+         Job job = Job.getInstance(config, "testing_stuff");  
+         FileSystem fs = FileSystem.get(config);
+         if (fs.exists(new Path(args[1]))) {
+            fs.delete(new Path(String.valueOf(args[1])), true);
+         }    
+         job.setJarByClass(ProcessUnits.class);
+         job.setMapperClass(E_EMapper.class); 
+         job.setCombinerClass(E_EReduce.class); 
+         job.setReducerClass(E_EReduce.class);
+         job.setOutputKeyClass(Text.class);
+         job.setOutputValueClass(Text.class);
+         FileInputFormat.addInputPath(job, new Path(args[0]));
+         FileOutputFormat.setOutputPath(job, new Path(args[1]));
+         job.waitForCompletion(true);
+
+         InputStream is = fs.open(new Path("output_dir/part-r-00000"));
+         try {
+            Properties props = new Properties();
+            props.load(new InputStreamReader(is, "UTF8"));
+            for (Map.Entry prop : props.entrySet()) {
+              String name = (String)prop.getKey();
+              String value = (String)prop.getValue();
+            //   System.out.println("Value: " + value);
+               double fitnessVal = updateTrail(value);
+               bestValSofar = Math.max(bestValSofar,fitnessVal);
+            }
+          } 
+          catch(Exception e){
+            e.printStackTrace();
+          }
+          finally {
+              is.close();
+          }
+          pw2 = new StringBuilder();
+          writeMatrix(pw2,pher);
+          config.set("pher",pw2.toString());
+          System.out.println("BestValSoFar: " + bestValSofar);
+          
+      }
 
 
       // System.out.println("Another One");
@@ -339,5 +368,20 @@ public class ProcessUnits {
           }
       return dist;
   }
+   public static double updateTrail(String value){
+         // System.out.println("UpdateTrailCalled");
+         StringTokenizer s= new StringTokenizer(value," ");
+         double contrib = Double.parseDouble(s.nextToken());
+         ArrayList<Integer> trail = new ArrayList<Integer>();
+         for(int i = 0;i < taskNum;i++)
+            trail.add(Integer.parseInt(s.nextToken()));
+         pher.get(0).get(0).set(trail.get(0),pher.get(0).get(0).get(trail.get(0))+contrib);
+            for(int i = 1; i < taskNum; i++){
+                  pher.get(i).get(trail.get(i-1))
+                     .set(trail.get(i),
+                     pher.get(i).get(trail.get(i-1)).get(trail.get(i))+contrib);
+            }
+         return contrib;
+      }
 
 }
