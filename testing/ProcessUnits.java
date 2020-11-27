@@ -1,6 +1,7 @@
 package hadoop; 
 
 import java.util.*; 
+import java.io.*;
 
 import java.io.IOException; 
 import java.io.IOException; 
@@ -32,38 +33,31 @@ public class ProcessUnits {
       ArrayList<ArrayList<ArrayList<Double>>> cost;
       ArrayList<ArrayList<ArrayList<Double>>> pher;
       ArrayList<ArrayList<Double>> datasetArray;
+      ArrayList<Double> wtList;
+      ArrayList<String> aggList;
+      
+      int taskNum;
+      int rowsPerTask;
+      int itemsPerRow = 5;
 
       protected void setup(Mapper.Context context)
         throws IOException, InterruptedException {
          cost = new ArrayList<ArrayList<ArrayList<Double>>>(); 
          pher = new ArrayList<ArrayList<ArrayList<Double>>>(); 
          datasetArray = new ArrayList<ArrayList<Double>>();
-         
+         wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
+         aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
+         StringTokenizer s;
+         taskNum = Integer.parseInt(context.getConfiguration().get("taskNum"));
+         int w = 2500/taskNum;
+         rowsPerTask = w;
+
          String inputCost = context.getConfiguration().get("cost");
          String inputPher = context.getConfiguration().get("pher");
          String inputDataset = context.getConfiguration().get("cost");
          
-      }
-
-
-      //Map function 
-      public void map(LongWritable key, Text value, 
-      Context context) throws IOException,InterruptedException { 
+         s = new StringTokenizer(inputCost," ");
          
-         String line = value.toString(); 
-         // String lasttoken = null; 
-         StringTokenizer s = new StringTokenizer(line," ");
-         int antid = Integer.parseInt(s.nextToken());
-         int taskNum = Integer.parseInt(s.nextToken());
-         int w = Integer.parseInt(s.nextToken());
-         int h = Integer.parseInt(s.nextToken());
-         
-         ArrayList<Double> wtList;
-         ArrayList<String> aggList;
-         wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
-         aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
-         int rowsPerTask = w;
-         int itemsPerRow = 5;
          ArrayList<ArrayList<Double>> tempMatrix = new ArrayList<ArrayList<Double>>();
          ArrayList<Double> tempRow = new ArrayList<Double>();
          for(int i = 0; i < w; i++)
@@ -81,6 +75,8 @@ public class ProcessUnits {
             }
             cost.add(tempMatrix);
          }
+
+         s = new StringTokenizer(inputPher," ");
 
          tempRow = new ArrayList<Double>();
          tempMatrix = new ArrayList<ArrayList<Double>>();
@@ -101,6 +97,7 @@ public class ProcessUnits {
             pher.add(tempMatrix);
          }
 
+         s = new StringTokenizer(inputDataset," ");
          for(int i = 0;i < 2500;i++){
             tempRow = new ArrayList<Double>();
             for(int j = 0;j < 5; j++){
@@ -109,13 +106,25 @@ public class ProcessUnits {
             datasetArray.add(tempRow);
          }
 
+
+      }
+
+
+      //Map function 
+      public void map(LongWritable key, Text value, 
+      Context context) throws IOException,InterruptedException { 
+
+         String antid = value.toString();
+         
+         
+
          Ant2 ant = new Ant2(taskNum,cost,pher,wtList,aggList,datasetArray);
          ant.move();
          String result = new String();
          result = String.valueOf(ant.getFitness());
          // for(int j = 0; j < taskNum; j++)
          //    result = result + String.valueOf(ant.trail.get(j)) + " ";
-         context.write(new Text(""+antid),new Text(result));
+         context.write(new Text(antid),new Text(result));
          // String year = s.nextToken(); 
          // while(s.hasMoreTokens()) {
          //    output.collect(new Text(s.nextToken()), new IntWritable(1));          
@@ -145,8 +154,15 @@ public class ProcessUnits {
          // output.collect(new Text(key+"_"), new IntWritable(tempVal)); 
       } 
    }
-   public static volatile ArrayList<Ant2> ants = new ArrayList<Ant2>();
-   public static ACO2 aco;
+   public static Dataset dataset;
+   public static ArrayList<ArrayList<ArrayList<Double>>> cost;
+   public static ArrayList<ArrayList<ArrayList<Double>>> pher;
+   public static ArrayList<Double> wtList;
+   public static ArrayList<String> aggList;
+   public static int taskNum = 50;
+   public static int itemsPerRow ;
+   public static int rowsPerTask ;
+
    //Main function 
 
    public static void main(String args[])throws Exception { 
@@ -185,8 +201,49 @@ public class ProcessUnits {
 
       // long endTime = System.currentTimeMillis();
       // System.out.println("Time Taken: " + (endTime-startTime) + "ms");
+      
+      taskNum = 50;
+      dataset = new Dataset(taskNum);
+      itemsPerRow = 5;
+      rowsPerTask = 2500/taskNum;
+      wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
+      aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
+      cost = new ArrayList<ArrayList<ArrayList<Double>>>();
+      pher = new ArrayList<ArrayList<ArrayList<Double>>>();
+        
+      StringBuilder qwsData = new StringBuilder();
+      BufferedReader br = new BufferedReader(new FileReader("qws2_csv_normalised_4.csv"));
+      String nextline = br.readLine();   
+      StringTokenizer tokenizer;
+
+      while((nextline = br.readLine()) != null){
+         tokenizer = new StringTokenizer(nextline,",");
+         ArrayList<String> vals = new ArrayList<String>();
+         while(tokenizer.hasMoreTokens())
+               vals.add(tokenizer.nextToken());
          
+         qwsData = qwsData.append(vals.get(6) + " ");   
+         qwsData = qwsData.append(vals.get(2) + " ");   
+         qwsData = qwsData.append(vals.get(1) + " ");   
+         qwsData = qwsData.append(vals.get(4) + " ");   
+         qwsData = qwsData.append(vals.get(0) + " ");
+
+        }
+         generateMatrices();
+
+         StringBuilder pw1 = new StringBuilder();
+         writeMatrix(pw1,cost);
+
+         StringBuilder pw2 = new StringBuilder();
+         writeMatrix(pw2,pher);
+
+
+
       Configuration config = new Configuration();
+      config.set("cost",pw1.toString());
+      config.set("pher",pw2.toString());
+      config.set("dataset",qwsData.toString());
+      config.set("taskNum",String.valueOf(taskNum));
       Job job = Job.getInstance(config, "testing_stuff");  
       FileSystem fs = FileSystem.get(config);
 		if (fs.exists(new Path(args[1]))) {
@@ -198,8 +255,6 @@ public class ProcessUnits {
       job.setReducerClass(E_EReduce.class);
       job.setOutputKeyClass(Text.class);
       job.setOutputValueClass(Text.class);
-      // job.setNumMapTasks(1);
-      // job.setNumReduceTasks(1);
       FileInputFormat.addInputPath(job, new Path(args[0]));
       FileOutputFormat.setOutputPath(job, new Path(args[1]));
       job.waitForCompletion(true);
@@ -210,19 +265,79 @@ public class ProcessUnits {
       // FileOutputFormat.setOutputPath(conf, new Path(args[1]+"1")); 
       // JobClient.runJob(conf); 
 
-      Job job2 = Job.getInstance(config, "testing_stuff2");  
-		if (fs.exists(new Path(args[1]+"1"))) {
-			fs.delete(new Path(String.valueOf(args[1]+"1")), true);
-		}    
-      job2.setJarByClass(ProcessUnits.class);
-      job2.setMapperClass(E_EMapper2.class); 
-      job2.setCombinerClass(E_EReduce2.class); 
-      job2.setReducerClass(E_EReduce2.class);
-      job2.setOutputKeyClass(Text.class);
-      job2.setOutputValueClass(Text.class);
+      // Job job2 = Job.getInstance(config, "testing_stuff2");  
+		// if (fs.exists(new Path(args[1]+"1"))) {
+		// 	fs.delete(new Path(String.valueOf(args[1]+"1")), true);
+		// }    
+      // job2.setJarByClass(ProcessUnits.class);
+      // job2.setMapperClass(E_EMapper2.class); 
+      // job2.setCombinerClass(E_EReduce2.class); 
+      // job2.setReducerClass(E_EReduce2.class);
+      // job2.setOutputKeyClass(Text.class);
+      // job2.setOutputValueClass(Text.class);
       // job.setNumMapTasks(1);
       // job.setNumReduceTasks(1);
-      FileInputFormat.addInputPath(job2, new Path(args[1]));
-      FileOutputFormat.setOutputPath(job2, new Path(args[1]+"1"));
-      job.waitForCompletion(true);   } 
+      // FileInputFormat.addInputPath(job2, new Path(args[1]));
+      // FileOutputFormat.setOutputPath(job2, new Path(args[1]+"1"));
+      // job.waitForCompletion(true);   
+   } 
+   private static void writeMatrix(StringBuilder pw,ArrayList<ArrayList<ArrayList<Double>>> arr){
+      for(int i = 0;i < arr.size();i++){
+          for(int j = 0;j < arr.get(i).size(); j++){
+              for(int k = 0; k < arr.get(i).get(j).size(); k++){
+                  pw.append(String.valueOf( arr.get(i).get(j).get(k) ) + " ");
+              }
+          }
+      }
+  }
+  private static void generateMatrices(){
+   cost.add(generateCostMatrix(-1,1,dataset.getRowsPerTask()));
+   for(int i = 0; i < taskNum-1; i++)
+       cost.add(generateCostMatrix(i,dataset.getRowsPerTask(),dataset.getRowsPerTask()));
+   
+   pher.add(generatePherMatrix(-1,1,dataset.getRowsPerTask()));
+   for(int i = 0; i < taskNum-1; i++)
+       pher.add(generatePherMatrix(i,dataset.getRowsPerTask(),dataset.getRowsPerTask()));
+   }
+   private static ArrayList<ArrayList<Double>> generateCostMatrix(int task,int r,int c){
+      ArrayList<ArrayList<Double>> matrix = new ArrayList<ArrayList<Double>>();
+      ArrayList<Double> tempRow;
+      for(int i =0; i < r; i++){
+          tempRow = new ArrayList<Double>();
+          for(int j = 0; j < c;j++){
+              tempRow.add(getDistance(task,i,j));
+          }
+          matrix.add(tempRow);
+      }
+      return matrix;
+  }
+  private static ArrayList<ArrayList<Double>> generatePherMatrix(int task,int r,int c){
+   ArrayList<ArrayList<Double>> matrix = new ArrayList<ArrayList<Double>>();
+   ArrayList<Double> tempRow;
+   for(int i =0; i < r; i++){
+       tempRow = new ArrayList<Double>();
+       for(int j = 0; j < c;j++){
+           tempRow.add(Math.random());
+       } 
+       matrix.add(tempRow);
+   }
+   return matrix;
+   }
+   private static double getDistance(int task,int i, int j){
+      double dist = 0;
+      if(task == -1)
+          for(int attr = 0; attr < dataset.getItemsPerRow(); attr++)
+              dist += wtList.get(attr)*dataset.getItem(0,j,attr);
+      else
+          for(int attr = 0; attr < dataset.getItemsPerRow(); attr++){
+              switch(aggList.get(attr)){
+                  case "sum": dist += wtList.get(attr)*(dataset.getItem(task,i,attr)+dataset.getItem(task+1,j,attr));break;
+                  case "mul": dist += wtList.get(attr)*(dataset.getItem(task,i,attr)*dataset.getItem(task+1,j,attr));break;
+                  case "min": dist += wtList.get(attr)*Math.min(dataset.getItem(task,i,attr),dataset.getItem(task+1,j,attr));break;
+                  case "max": dist += wtList.get(attr)*Math.max(dataset.getItem(task,i,attr),dataset.getItem(task+1,j,attr));break;
+              }
+          }
+      return dist;
+  }
+
 }

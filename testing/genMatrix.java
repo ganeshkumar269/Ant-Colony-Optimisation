@@ -19,7 +19,7 @@ class genMatrix{
         if(args.length > 0)
             numOfAnts = Integer.parseInt(args[0]);
         generateMatrices();
-        PrintWriter pw = new PrintWriter("data.txt");
+        PrintWriter pw = new PrintWriter("cost.txt");
         String qwsData = new String();
         BufferedReader br = new BufferedReader(new FileReader("qws2_csv_normalised_4.csv"));
         String nextline = br.readLine();   
@@ -40,14 +40,19 @@ class genMatrix{
         }   
 
         for(int i = 0; i < numOfAnts; i++){
-            pw.write(String.valueOf(i) + " ");
-            pw.write(String.valueOf(taskNum) + " ");
-            pw.write(String.valueOf(cost.get(1).size())+ " ");
-            pw.write(String.valueOf(cost.get(1).size())+ " ");
+            // pw.write(String.valueOf(i) + " ");
+            // pw.write(String.valueOf(taskNum) + " ");
+            // pw.write(String.valueOf(cost.get(1).size())+ " ");
+            // pw.write(String.valueOf(cost.get(1).size())+ " ");
     
             writeMatrix(pw,cost);
+
+            pw.write("\n");   
+
             writeMatrix(pw,pher);
 
+            pw.write("\n");   
+ 
             pw.write(qwsData);
 
             pw.write("\n");   
