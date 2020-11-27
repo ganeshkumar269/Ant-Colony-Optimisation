@@ -202,7 +202,7 @@ public class ProcessUnits {
       // long endTime = System.currentTimeMillis();
       // System.out.println("Time Taken: " + (endTime-startTime) + "ms");
       
-      taskNum = 50;
+      taskNum = 20;
       dataset = new Dataset(taskNum);
       itemsPerRow = 5;
       rowsPerTask = 2500/taskNum;
@@ -245,7 +245,7 @@ public class ProcessUnits {
       config.set("pher",pw2.toString());
       config.set("dataset",qwsData.toString());
       config.set("taskNum",String.valueOf(taskNum));
-      int itr = 1;
+      int itr = 5;
       for(int i = 0;i < itr; i++){
 
          Job job = Job.getInstance(config, "testing_stuff");  
