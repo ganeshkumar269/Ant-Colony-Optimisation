@@ -125,14 +125,6 @@ public class ProcessUnits {
          for(int j = 0; j < taskNum; j++)
             result.append(String.valueOf(ant.trail.get(j)) + " ");
          context.write(new Text(antid),new Text(result.toString()));
-         // String year = s.nextToken(); 
-         // while(s.hasMoreTokens()) {
-         //    output.collect(new Text(s.nextToken()), new IntWritable(1));          
-         // }
-         // int antid = Integer.parseInt(line);
-         // System.out.println(ants.size());
-         // ants.get(antid).move();
-         // output.collect(new IntWritable(antid),new DoubleWritable(ants.get(antid).getFitness()));
       }
 
    }
@@ -143,15 +135,7 @@ public class ProcessUnits {
       //Reduce function 
       public void reduce( Text key, Iterator <Text> values, 
       Context context) throws IOException,InterruptedException { 
-         // int antid = key.get();
-         // double fitness = 0;
-         // while (values.hasNext()) { 
-         //    fitness = values.next().get();
-         // }
          context.write(key,values.next());
-         // output.collect(key, new DoubleWritable(fitness)); 
-         // output.collect(key, new IntWritable(cnt)); 
-         // output.collect(new Text(key+"_"), new IntWritable(tempVal)); 
       } 
    }
    public static Dataset dataset;
@@ -159,50 +143,19 @@ public class ProcessUnits {
    public static ArrayList<ArrayList<ArrayList<Double>>> pher;
    public static ArrayList<Double> wtList;
    public static ArrayList<String> aggList;
-   public static int taskNum = 50;
+   public static int taskNum;
    public static int itemsPerRow ;
    public static int rowsPerTask ;
+   public static double evap;
 
    //Main function 
 
    public static void main(String args[])throws Exception { 
-      // int taskNum = 20;
-      // int numOfAnts = 10;
-      // aco = new ACO2(taskNum);
-      // for(int i = 0;i < numOfAnts; i++)
-      //    ants.add(new Ant2(taskNum,aco.cost,aco.pher,aco.wtList,aco.aggList,aco.dataset));
-      // System.out.println("Ants Created");
-
-      // JobConf conf = new JobConf(ProcessUnits.class); 
-      // Configuration config = new Configuration();
-
-      // conf.setJobName("max_eletricityunits"); 
-      // conf.setOutputKeyClass(Text.class);
-      // conf.setOutputValueClass(IntWritable.class); 
-      // conf.setMapperClass(E_EMapper.class); 
-      // conf.setCombinerClass(E_EReduce.class); 
-      // conf.setReducerClass(E_EReduce.class); 
-      // conf.setInputFormat(TextInputFormat.class); 
-      // conf.setOutputFormat(TextOutputFormat.class);
-      // // conf.set("mapreduce.map.speculative","false");
-      // // conf.set("mapreduce.reduce.speculative","false");
-      // FileSystem fs = FileSystem.get(config);
-		// if (fs.exists(new Path(args[1]))) {
-		// 	fs.delete(new Path(String.valueOf(args[1])), true);
-		// }
-      // FileInputFormat.setInputPaths(conf, new Path(args[0])); 
-      // FileOutputFormat.setOutputPath(conf, new Path(args[1])); 
-      
-      // long startTime = System.currentTimeMillis();
-      
-      
-      // JobClient.runJob(conf); 
-
-
-      // long endTime = System.currentTimeMillis();
       // System.out.println("Time Taken: " + (endTime-startTime) + "ms");
+      // long endTime = System.currentTimeMillis();
       
       taskNum = 20;
+      evap = 0.5;
       dataset = new Dataset(taskNum);
       itemsPerRow = 5;
       rowsPerTask = 2500/taskNum;
@@ -212,6 +165,8 @@ public class ProcessUnits {
       cost = new ArrayList<ArrayList<ArrayList<Double>>>();
       pher = new ArrayList<ArrayList<ArrayList<Double>>>();
         
+      PrintWriter outlog = new PrintWriter("output_log.txt");
+
       StringBuilder qwsData = new StringBuilder();
       BufferedReader br = new BufferedReader(new FileReader("qws2_csv_normalised_4.csv"));
       String nextline = br.readLine();   
@@ -245,9 +200,11 @@ public class ProcessUnits {
       config.set("pher",pw2.toString());
       config.set("dataset",qwsData.toString());
       config.set("taskNum",String.valueOf(taskNum));
-      int itr = 5;
+      // config.set("mapred.min.split.size","2");
+      // config.set("mapred.max.split.size","2");
+      int itr = 2;
       for(int i = 0;i < itr; i++){
-
+         double bestValSofarForCurrItr = 0;
          Job job = Job.getInstance(config, "testing_stuff");  
          FileSystem fs = FileSystem.get(config);
          if (fs.exists(new Path(args[1]))) {
@@ -262,7 +219,7 @@ public class ProcessUnits {
          FileInputFormat.addInputPath(job, new Path(args[0]));
          FileOutputFormat.setOutputPath(job, new Path(args[1]));
          job.waitForCompletion(true);
-
+         evaporate();
          InputStream is = fs.open(new Path("output_dir/part-r-00000"));
          try {
             Properties props = new Properties();
@@ -272,7 +229,7 @@ public class ProcessUnits {
               String value = (String)prop.getValue();
             //   System.out.println("Value: " + value);
                double fitnessVal = updateTrail(value);
-               bestValSofar = Math.max(bestValSofar,fitnessVal);
+               bestValSofarForCurrItr = Math.max(bestValSofarForCurrItr,fitnessVal);
             }
           } 
           catch(Exception e){
@@ -284,31 +241,13 @@ public class ProcessUnits {
           pw2 = new StringBuilder();
           writeMatrix(pw2,pher);
           config.set("pher",pw2.toString());
-          System.out.println("BestValSoFar: " + bestValSofar);
-          
-      }
+          outlog.write("Iteration  " + i + ": BestFitness: " +bestValSofarForCurrItr);
+          bestValSofar = Math.max(bestValSofar,bestValSofarForCurrItr);
 
-
-      // System.out.println("Another One");
-      // FileInputFormat.setInputPaths(conf, new Path(args[1])); 
-      // FileOutputFormat.setOutputPath(conf, new Path(args[1]+"1")); 
-      // JobClient.runJob(conf); 
-
-      // Job job2 = Job.getInstance(config, "testing_stuff2");  
-		// if (fs.exists(new Path(args[1]+"1"))) {
-		// 	fs.delete(new Path(String.valueOf(args[1]+"1")), true);
-		// }    
-      // job2.setJarByClass(ProcessUnits.class);
-      // job2.setMapperClass(E_EMapper2.class); 
-      // job2.setCombinerClass(E_EReduce2.class); 
-      // job2.setReducerClass(E_EReduce2.class);
-      // job2.setOutputKeyClass(Text.class);
-      // job2.setOutputValueClass(Text.class);
-      // job.setNumMapTasks(1);
-      // job.setNumReduceTasks(1);
-      // FileInputFormat.addInputPath(job2, new Path(args[1]));
-      // FileOutputFormat.setOutputPath(job2, new Path(args[1]+"1"));
-      // job.waitForCompletion(true);   
+          outlog.write(" BestFitnessSoFar: " + bestValSofar);
+          outlog.write("\n");
+      }  
+      outlog.flush();
    } 
    private static void writeMatrix(StringBuilder pw,ArrayList<ArrayList<ArrayList<Double>>> arr){
       for(int i = 0;i < arr.size();i++){
@@ -383,5 +322,12 @@ public class ProcessUnits {
             }
          return contrib;
       }
+      public static void evaporate(){
+         for(int i =0 ;i < pher.size();i++)
+             for(int j = 0;j < pher.get(i).size();j++)
+                 for(int k = 0; k < pher.get(i).get(j).size();k++)
+                 pher.get(i).get(j).set(k,pher.get(i).get(j).get(k)*evap);
+ 
+     }
 
 }

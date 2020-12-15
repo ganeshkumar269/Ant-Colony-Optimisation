@@ -1,0 +1,2 @@
+Iteration  0: BestFitness: 4.039066773801241 BestFitnessSoFar: 4.039066773801241
+Iteration  1: BestFitness: 4.192019119383854 BestFitnessSoFar: 4.192019119383854
