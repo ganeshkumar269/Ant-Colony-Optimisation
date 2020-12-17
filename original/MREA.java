@@ -163,13 +163,72 @@ public class MREA{
             ArrayList<Double> temp_fit = new ArrayList<Double>(fitness);
             Collections.sort(temp_fit);
             double th = temp_fit.get(3*fitness.size()/4);
-            for(ArrayList<Integer> i : sols){
-                if()
+            double bestFitness = temp_fit.get(temp_fit.size()-1);
+            ArrayList<Integer> bestSol = new ArrayList<Integer>(); 
+            for(int i = 0;i < sols.size(); i++){
+                if(fitness.get(i) >= th)
+                    parentPop.add(sols.get(i));
+                if(fitness.get(i) == bestFitness)
+                    bestSol = sols.get(i);
             }
-
+            
             //Update Prob
+            ArrayList<ArrayList<Integer>> cnts = new ArrayList<ArrayList<Integer>>();  
+            for(int i =0 ;i < taskNum; i++){
+                ArrayList<Integer> cnt = new ArrayList<Integer>();
+                for(int j = 0; j < totalList.get(i).size();j++);
+                    cnt.add(0);
+                cnts.add(cnt);
+            } 
+            
+            for(ArrayList<Integer> i : parentPop){
+                for(int j = 0; j < i.size(); j++){
+                    cnts.get(j).set( i.get(j) , cnts.get(j).get(i.get(j)) + 1)
+                }
+            }
+            double lambda = 0;
+            for(int i = 0;i < totalList.size(); i++){
+                for(int j =0; j < totalList.get(i).size(); j++){
+                    prob.get(i).set(j , (1-lambda)*prob.get(i).get(j) + ( lambda*4*cnts.get(i).get(j) / sols.size() ) );
+                }
+            }
+            
             //Guided Mutation
+            ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>(); 
+            double beta = 0;
+            double th_prob = 0;
+            for(int i = 0;i < taskNum; i++){
+                ArrayList<Integer> temp = new ArrayList<Integer>();
+                for(int j = 0; j < totalList.get(i).size(); j++){
+                    double r = Math.random();
+                    if( r < beta){
+                        if(prob.get(i).get(j) < th_prob){
+                            String out = new String();
+                            out = String.valueOf( totalids.get(i).get(j) );
+                            for(int k =0 ;k < 5;k++){
+                                out = out + totalList.get(i).get(j).get(k) + " ";
+                            }
+                            context.write(new IntWritable(i),new Text(out));
+                        }
+                        else{
+                            if(bestSol.get(i) == j){
+                                String out = new String();
+                                out = String.valueOf( totalids.get(i).get(j) );
+                                for(int k =0 ;k < 5;k++){
+                                    out = out + totalList.get(i).get(j).get(k) + " ";
+                                }
+                                context.write(new IntWritable(i),new Text(out));
+                            }
+                        }
+                    }
+                }
+                result.add(temp);
+            }
+            
+            
             //Repair Op.
+
+
         }
     }
     public static void main(String... args){
