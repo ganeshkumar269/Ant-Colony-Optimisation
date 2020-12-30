@@ -17,26 +17,17 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+
+/*
+    Map: (key,value)
+        
+
+*/
 public class ABC {
     public static class E_EMapper extends  
-    Mapper<LongWritable ,/*Input key Type */ 
-    Text,                /*Input value Type*/ 
-    Text,                /*Output key Type*/ 
-    Text>        /*Output value Type*/ 
+    Mapper<LongWritable, Text, Text, Text>        
     {
-        public static int val;
-        protected void setup(Mapper.Context context){
-            Configuration config = context.getConfiguration();
-            try{
-                FileSystem fs = FileSystem.get(config);
-                InputStream is = fs.open(new Path("thisiscreated.txt"));
-                val = (int)is.read();
-            }
-            catch(Exception e){
-                e.printStackTrace();
-            }
-        
-        }
+      
         public void map(LongWritable key, Text value, 
         Context context) throws IOException,InterruptedException { 
             context.write(new Text("Val"),new Text(String.valueOf(val)));

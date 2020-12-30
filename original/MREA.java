@@ -1,3 +1,4 @@
+package hadoop;
 import java.io.*;
 import java.util.*;
 
@@ -17,11 +18,14 @@ public class MREA{
         //output -> (task,{csid,csqos})
         public void map(LongWritable key, Text value, 
         Context context) throws IOException,InterruptedException { 
-            StringTokenizer s = new StringTokenizer(value," ");
-            if(!s.nextToken().equals("solution"))
+            StringTokenizer s = new StringTokenizer(value.toString()," ");
+            String initVal = s.nextToken();
+            if(!initVal.equals("solution"))
             {
-                String task = s.nextToken();
+                String task = initVal;
                 String QoS = new String();
+                String csid = s.nextToken();
+                QoS = csid + " ";
                 while(s.hasMoreTokens())
                     QoS = QoS + s.nextToken() + " ";
                 context.write(new IntWritable(Integer.parseInt(task)),new Text(QoS));
@@ -34,11 +38,11 @@ public class MREA{
         Context context) throws IOException,InterruptedException {    
             ArrayList<ArrayList<Double>> csList = new ArrayList<ArrayList<Double>>();
             ArrayList<Double> cs;
-            ArrayList<Integer> csIds = new ArrayList<Integer>();
+            ArrayList<String> csIds = new ArrayList<String>();
             while(values.hasNext()){
                 Text value = values.next();
-                StringTokenizer st = new StringTokenizer(value," ");
-                int csid = Integer.parseInt(st.nextToken());
+                StringTokenizer st = new StringTokenizer(value.toString()," ");
+                String csid = st.nextToken();
                 csIds.add(csid);
                 cs = new ArrayList<Double>();
                 while(st.hasMoreTokens()){
@@ -51,23 +55,29 @@ public class MREA{
             for(int i = 0;i < csList.size();i++){
                 boolean canBeAdded = true;
                 for(int j = 0; j < csList.size();j++){
-                    if(i!=j){
-                        int cnt = 0;
-                        for(int k = 0; k < 5; k++){
-                            if(csList.get(i).get(k) < csList.get(j).get(k)){
-                                cnt += 1
-                            }
-                        }
-                        if(cnt == 5)
-                            canBeAdded = false;
+                    int e = 0;
+                    int g = 0;
+                    int l = 0;
+                    if(i == j) continue;
+                    for(int k = 0; k < 5; k++){
+                        if(csList.get(i).get(k) < csList.get(j).get(k))
+                            l += 1;
+                        if(csList.get(i).get(k) == csList.get(j).get(k))
+                            e += 1;
+                        if(csList.get(i).get(k) > csList.get(j).get(k))
+                            g += 1;
                     }
-                    if(canBeAdded == false)
+
+                            
+                    if(g==0 && e !=5){
+                        canBeAdded = false;
                         break;
+                    }
                 }
                 if(canBeAdded == true){
                     String out = new String();
-                    out = key.toString() + " " + String.valueOf(csIds.get(i)) + " ";
-                    for(int k = 0 ;k < 5; k){
+                    out = key.toString() + " " + csIds.get(i) + " ";
+                    for(int k = 0 ;k < 5; k++){
                         out = out + String.valueOf(csList.get(i).get(k)) + " ";
                     }
                     context.write(new IntWritable(1),new Text(out));
@@ -79,16 +89,16 @@ public class MREA{
         public void reduce(Text key, Iterator <Text> values, 
         Context context) throws IOException,InterruptedException { 
             ArrayList<ArrayList<Double>> csList = new  ArrayList<ArrayList<Double>>();
-            HashMap<Integer,ArrayList<ArrayList<Double>> > totalList = new  HashMap<Integer,ArrayList<Double>>(); 
-            HashMap<Integer,ArrayList<Integer>> totalids = new  HashMap<Integer,ArrayList<Double>>(); 
+            HashMap<Integer,ArrayList<ArrayList<Double>> > totalList = new  HashMap<Integer,ArrayList<ArrayList<Double>>>(); 
+            HashMap<Integer,ArrayList<String>> totalids = new  HashMap<Integer,ArrayList<String>>(); 
             for(int i = 0;i < 100;i++)
                 csList.add(new ArrayList<Double>());
-            for(Text i : values){
-                String t = i.toString();
+            while(values.hasNext()){
+                String t = values.next().toString();
                 ArrayList<Double> cs = new ArrayList<Double>();
                 StringTokenizer st = new StringTokenizer(t, " ");
                 int task = Integer.parseInt(st.nextToken());
-                int csid = Integer.parseInt(st.nextToken());
+                String csid = st.nextToken();
                 
                 for(int k =0; k < 5;k++)
                     cs.add(Double.parseDouble(st.nextToken()));
@@ -98,7 +108,7 @@ public class MREA{
                 }
                 else{
                     totalList.put(task,new ArrayList<ArrayList<Double>>());
-                    totalids.put(task,new ArrayList<Integer>());
+                    totalids.put(task,new ArrayList<String>());
                     totalids.get(task).add(csid);
                     totalList.get(task).add(cs);
                 }
@@ -123,7 +133,7 @@ public class MREA{
             ArrayList<ArrayList<Double>> prob = new ArrayList<ArrayList<Double>>();
             for(int i =0;i < taskNum; i++){
                 ArrayList<Double> temp = new ArrayList<Double>();
-                for(int j =0 ;j < totalList.get(i)).size(); j++)
+                for(int j =0 ;j < totalList.get(i).size(); j++)
                     temp.add(1.0/totalList.get(i).size());
                 prob.add(temp);
             }
@@ -134,7 +144,7 @@ public class MREA{
             
             //Generate Parent Pop
             ArrayList<ArrayList<Integer>> parentPop = new ArrayList<ArrayList<Integer>>(); 
-            ArrayList<Double>> fitness = new ArrayList<Double>();
+            ArrayList<Double> fitness = new ArrayList<Double>();
             
             for(ArrayList<Integer> i : sols){
                 double val = 0;
@@ -144,7 +154,7 @@ public class MREA{
                 val += 0.1417*tempVal;
                 tempVal = Double.MAX_VALUE;
                 for(int j = 0; j < taskNum;j++)
-                    tempVal = min(tempVal,totalList.get(j).get(i.get(j)).get(1));
+                    tempVal = Math.min(tempVal,totalList.get(j).get(i.get(j)).get(1).doubleValue());
                 val += tempVal;
                 tempVal = 1;
                 for(int j = 0; j < taskNum;j++)
@@ -183,7 +193,7 @@ public class MREA{
             
             for(ArrayList<Integer> i : parentPop){
                 for(int j = 0; j < i.size(); j++){
-                    cnts.get(j).set( i.get(j) , cnts.get(j).get(i.get(j)) + 1)
+                    cnts.get(j).set( i.get(j) , cnts.get(j).get(i.get(j)) + 1);
                 }
             }
             double lambda = 0;
@@ -204,7 +214,7 @@ public class MREA{
                     if( r < beta){
                         if(prob.get(i).get(j) < th_prob){
                             String out = new String();
-                            out = String.valueOf( totalids.get(i).get(j) );
+                            out = totalids.get(i).get(j);
                             for(int k =0 ;k < 5;k++){
                                 out = out + totalList.get(i).get(j).get(k) + " ";
                             }
@@ -213,11 +223,12 @@ public class MREA{
                         else{
                             if(bestSol.get(i) == j){
                                 String out = new String();
-                                out = String.valueOf( totalids.get(i).get(j) );
+                                out = totalids.get(i).get(j);
                                 for(int k =0 ;k < 5;k++){
                                     out = out + totalList.get(i).get(j).get(k) + " ";
                                 }
-                                context.write(new IntWritable(i),new Text(out));
+                                int testKey = Integer.parseInt(key.toString());
+                                context.write(new IntWritable(testKey),new Text(out));
                             }
                         }
                     }
@@ -231,7 +242,21 @@ public class MREA{
 
         }
     }
-    public static void main(String... args){
-        
+    public static void main(String... args) throws IOException,InterruptedException,ClassNotFoundException{
+       Configuration config = new Configuration();
+       Job job = Job.getInstance(config,"MREA");
+       FileSystem fs = FileSystem.get(config);
+       job.setJarByClass(MREA.class);
+       job.setMapperClass(EMapper.class);
+       job.setCombinerClass(ECombiner.class);
+       job.setReducerClass(EReducer.class);
+       job.setOutputKeyClass(IntWritable.class);
+       job.setOutputValueClass(Text.class);
+       FileInputFormat.addInputPath(job,new Path(args[0]));
+        if (fs.exists(new Path(args[1]))) {
+            fs.delete(new Path(String.valueOf(args[1])), true);
+        }    
+       FileOutputFormat.setOutputPath(job,new Path(args[1]));
+       job.waitForCompletion(true);
     }
 }

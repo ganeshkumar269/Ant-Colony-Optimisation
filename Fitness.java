@@ -17,6 +17,11 @@ public class Fitness{
         aggFnList = _aggFnList;
         wtList = _wtList;
     }
+    public Fitness(ArrayList<ArrayList<Double>> _Arr){
+        arr = _Arr
+        wtList = new ArrayList<Double>(Arrays.asList(0.1417,0.1373,0.3481,0.964,0.325));
+        aggList = new ArrayList<String>(Arrays.asList("sum","min","mul","mul","sum"));
+    }
 
     private double getSum(int index){
         double sum = 0;

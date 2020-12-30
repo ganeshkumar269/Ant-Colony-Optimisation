@@ -133,7 +133,7 @@ public class ProcessUnits {
    public static class E_EReduce extends Reducer< Text, Text, Text,Text > {
    
       //Reduce function 
-      public void reduce( Text key, Iterator <Text> values, 
+      public void reduce( Text key, Iterable <Text> values, 
       Context context) throws IOException,InterruptedException { 
          context.write(key,values.next());
       } 
