@@ -1,7 +1,7 @@
 #! /bin/sh
 #when connection refused occurs -> sudo service ssh restart
-javac MR2.java -d units2 -cp $(/home/ganeshkumar269/hadoop/hadoop-3.3.0/bin/hadoop classpath):. &&
-jar -cvf units2.jar -C units2/ . &&
-~/hadoop/hadoop-3.3.0/bin/hadoop jar units2.jar hadoop.MR2 input_dir2 output_dir2
+javac MR1.java -d units -cp $(/home/ganeshkumar269/hadoop/hadoop-3.3.0/bin/hadoop classpath):. &&
+jar -cvf units.jar -C units/ . &&
+~/hadoop/hadoop-3.3.0/bin/hadoop jar units.jar hadoop.MR1 input_dir output_dir
 #~/hadoop/hadoop-3.3.0/bin/hadoop fs -ls output_dir/ &&
-~/hadoop/hadoop-3.3.0/bin/hadoop fs -cat output_dir2/part-r-00000 
+~/hadoop/hadoop-3.3.0/bin/hadoop fs -cat output_dir/part-r-00000 

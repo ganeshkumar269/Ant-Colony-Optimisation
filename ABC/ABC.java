@@ -24,18 +24,16 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 */
 public class ABC {
-    public static class E_EMapper extends  
-    Mapper<LongWritable, Text, Text, Text>        
+    public static class E_EMapper extends  Mapper<Text, Text, Text, Text>        
     {
       
-        public void map(LongWritable key, Text value, 
-        Context context) throws IOException,InterruptedException { 
-            context.write(new Text("Val"),new Text(String.valueOf(val)));
+        public void map(Text key, Text value, Context context) throws IOException,InterruptedException { 
+            context.write(key ,value);
         }
     }
     public static class E_EReduce extends Reducer< Text, Text, Text,Text > {
-        public void reduce( Text key, Iterator <Text> values, 
-        Context context) throws IOException,InterruptedException { 
+        public void reduce( Text key, Iterable<Text> values, Context context) throws IOException,InterruptedException { 
+           ArrayList<ArrayList<ArrayList<Double>>> foods = new ArrayList<ArrayList<ArrayList<Double>>>();  
             
         }
     }
