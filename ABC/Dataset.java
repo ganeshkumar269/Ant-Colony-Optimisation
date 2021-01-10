@@ -1,11 +1,10 @@
-// package hadoop;
-
+package hadoop;
 import com.opencsv.CSVReader;
 import java.util.*;
 import java.io.*;
 
-// DataFormat: Price, throughput, availabity,reliablity, response time 
-
+// DataFormat: Price, throughput, availabity, reliablity, response time 
+ 
 public class Dataset{
     private ArrayList<ArrayList<Double>> _Data;
     // private String[] head;
