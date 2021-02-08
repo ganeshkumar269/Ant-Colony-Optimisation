@@ -117,8 +117,16 @@ public class ABC {
             int index =0 ;
             for(int i =0 ;i < foods.size(); i++){
                 double r = Math.random();
-                while(Math.random() < prob.get(index)) index = (index+1)%foods.size();
-                
+
+                System.out.println("The while loop start");
+                double _temp_var = Math.random();
+                while(_temp_var < prob.get(index)){    
+                    System.out.println("_temp_var " + _temp_var);
+                    System.out.println("prob val " + prob.get(index));
+                    index = (index+1)%foods.size();
+                    _temp_var = Math.random();
+                }
+                System.out.println("The while loop end");
                 int partner;
                 while((partner = (int) (foods.size()*Math.random())) != index);
                 int gene = (int)( foods.get(0).size()*Math.random() );
@@ -252,57 +260,57 @@ public class ABC {
         // ObjectOutputStream oos = new ObjectOutputStream(fos);
         // oos.writeObject(temparr);
         // oos.close();  
-        Job job = Job.getInstance(config, "testing_stuff");  
-        job.setJarByClass(ABC.class);
-        job.setMapperClass(EMapper.class); 
-        job.setCombinerClass(EReduce.class); 
-        job.setReducerClass(EReduce.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(Text.class);
-        job.setInputFormatClass(KeyValueTextInputFormat.class);
-        FileInputFormat.addInputPath(job, new Path(args[0]));
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        job.waitForCompletion(true);
-        System.out.println("MR-Over");
-        double maxFitnessSoFar = 0;
-        int indexOfBestSol = 0;
-        ArrayList<ArrayList<Integer>> reducerOutput = new  ArrayList<ArrayList<Integer>>();
-        InputStream is = fs.open(new Path("output_dir/part-r-00000"));
-        try {
-            Properties props = new Properties();
-            props.load(new InputStreamReader(is, "UTF8"));
-            int itr = 0;
-            for (Map.Entry prop : props.entrySet()) {
-                String name = (String)prop.getKey();
-                String value = (String)prop.getValue();
-                // System.out.println("Driver: key " + name + " value " + value);
-                double fitnessVal = Double.parseDouble(name);
-                if(maxFitnessSoFar < fitnessVal){
-                    maxFitnessSoFar = Math.max(maxFitnessSoFar,fitnessVal);
-                    indexOfBestSol = itr; 
-                }
-                StringTokenizer st = new StringTokenizer(value.toString()," ");
-                ArrayList<Integer> tempSol = new ArrayList<Integer>();
-                while(st.hasMoreTokens()){
-                    int val = Integer.parseInt(st.nextToken());
-                    tempSol.add(val);
-                    // newTotalList_hs.get(itr).add(val);
-                }
-                reducerOutput.add(tempSol);
-                itr++;
-            }
-        } 
-        catch(Exception e){
-            e.printStackTrace();
-        }
-        finally {
-            is.close();
-        }
-        System.out.println("MaxFitnessSoFar: " + maxFitnessSoFar);
-        //Initialisation Phase
-        //EmpBee Phase
-        //OnLookBee Phase
-        //ScoutPhase
-    }
+        int numOfItrs = 10;
+        for(int _itr_ = 0; _itr_ < numOfItrs; _itr_++){
 
+            Job job = Job.getInstance(config, "ABC");  
+            job.setJarByClass(ABC.class);
+            job.setMapperClass(EMapper.class); 
+            job.setPartitionerClass(EPartitioner.class);
+            job.setCombinerClass(EReduce.class); 
+            job.setReducerClass(EReduce.class);
+            job.setOutputKeyClass(Text.class);
+            job.setOutputValueClass(Text.class);
+            job.setInputFormatClass(KeyValueTextInputFormat.class);
+            FileInputFormat.addInputPath(job, new Path(args[0]));
+            FileOutputFormat.setOutputPath(job, new Path(args[1]));
+            job.waitForCompletion(true);
+            // System.out.println("MR-Over");
+            double maxFitnessSoFar = 0;
+            int indexOfBestSol = 0;
+            ArrayList<ArrayList<Integer>> reducerOutput = new  ArrayList<ArrayList<Integer>>();
+            InputStream is = fs.open(new Path("output_dir/part-r-00000"));
+            try {
+                Properties props = new Properties();
+                props.load(new InputStreamReader(is, "UTF8"));
+                int itr = 0;
+                for (Map.Entry prop : props.entrySet()) {
+                    String name = (String)prop.getKey();
+                    String value = (String)prop.getValue();
+                    // System.out.println("Driver: key " + name + " value " + value);
+                    double fitnessVal = Double.parseDouble(name);
+                    if(maxFitnessSoFar < fitnessVal){
+                        maxFitnessSoFar = Math.max(maxFitnessSoFar,fitnessVal);
+                        indexOfBestSol = itr; 
+                    }
+                    StringTokenizer st = new StringTokenizer(value.toString()," ");
+                    ArrayList<Integer> tempSol = new ArrayList<Integer>();
+                    while(st.hasMoreTokens()){
+                        int val = Integer.parseInt(st.nextToken());
+                        tempSol.add(val);
+                        // newTotalList_hs.get(itr).add(val);
+                    }
+                    reducerOutput.add(tempSol);
+                    itr++;
+                }
+            } 
+            catch(Exception e){
+                e.printStackTrace();
+            }
+            finally {
+                is.close();
+            }
+            System.out.println("MaxFitnessSoFar: " + maxFitnessSoFar);
+        }
+    }
 }
