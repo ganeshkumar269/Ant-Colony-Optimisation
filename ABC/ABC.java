@@ -20,16 +20,12 @@ import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 
-/*
-    Map: (key,value)
-        
-
-*/
 public class ABC {
     public static class EMapper extends  Mapper<Text, Text, Text, Text>        
     {
       
         public void map(Text key, Text value, Context context) throws IOException,InterruptedException { 
+            System.out.println("Key "+key.toString() + " Value: " + value.toString());
             context.write(key ,value);
         }
     }
@@ -55,7 +51,7 @@ public class ABC {
             ArrayList<Double> tempRow;
             for(int i = 0;i < 2500;i++){
                 tempRow = new ArrayList<Double>();
-                for(int j = 0;j < 5; j++){
+                for(int j = 0;j < itemsPerRow; j++){
                     tempRow.add(Double.parseDouble(s.nextToken()));
                 }
                 dataset.add(tempRow);
@@ -71,7 +67,7 @@ public class ABC {
         public void reduce( Text key, Iterable<Text> values, Context context) throws IOException,InterruptedException { 
             ArrayList<ArrayList<Integer>> foods = new ArrayList<ArrayList<Integer>>();  
             ArrayList<Integer> trail = new ArrayList<Integer>();
-
+            System.out.println("Dataset Size: " + dataset.size());
             for(Text i : values){
                 StringTokenizer st = new StringTokenizer(i.toString()," ");
                 ArrayList<Integer> temp = new ArrayList<Integer>();
@@ -86,6 +82,7 @@ public class ABC {
             ArrayList<Double> fit = new ArrayList<Double>();
             for(int i = 0; i < foods.size(); i++)
                 fit.add(getFitness(foods.get(i)));  
+            System.out.println("Going to Emp Phase");
             //Emp phase
             for(int  i =0; i < foods.size();i++){
                 int partner;
@@ -108,6 +105,8 @@ public class ABC {
                 }
 
             }
+            System.out.println("Emp Phase Completed");
+            System.out.println("Onlooker Started");
             //Onlooker Phase
             ArrayList<Double> prob = new ArrayList<Double>();
             double fitnessSum = 0;
@@ -146,6 +145,7 @@ public class ABC {
                     maxFitness = fit.get(i);
                     maxFitnessIndex = i;
                 }
+            System.out.println("Onlooker Phase completed");
             //Scout Phase
             ArrayList<Integer> reset = new ArrayList<Integer>();
             for(int i =0 ; i < trail.size();i++){
@@ -165,13 +165,15 @@ public class ABC {
                 fit.set(ind,getFitness(foods.get(ind)));
             }
 
+            System.out.println("Scout Phase completed");
 
             for(int i =0 ;i < foods.size(); i++){
                 StringBuilder out = new StringBuilder();
                 for(int t : foods.get(i))
-                    out = out.append(String.valueOf(i) +" ");
+                    out = out.append(String.valueOf(t) +" ");
                 context.write(new Text(String.valueOf(fit.get(i))), new Text(out.toString() + " " + trail.get(i)));
             }
+            System.out.println("R Completed");
         }
     }
     public static class EPartitioner extends Partitioner<Text,Text>{
@@ -197,7 +199,7 @@ public class ABC {
                 int index = (int) ( Math.random()*dataset.getRowsPerTask());
                 pw.write(String.valueOf(index) + " ");
             }
-            pw.write("0 \n");
+            pw.write("0 \n"); //this is trail value of a food source
         }
         pw.flush();
         pw.close();

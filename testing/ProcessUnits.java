@@ -135,7 +135,8 @@ public class ProcessUnits {
       //Reduce function 
       public void reduce( Text key, Iterable <Text> values, 
       Context context) throws IOException,InterruptedException { 
-         context.write(key,values.next());
+         for(Text i : values)
+            context.write(key,i);
       } 
    }
    public static Dataset dataset;
@@ -154,7 +155,7 @@ public class ProcessUnits {
       // System.out.println("Time Taken: " + (endTime-startTime) + "ms");
       // long endTime = System.currentTimeMillis();
       
-      taskNum = 20;
+      taskNum = 80;
       evap = 0.5;
       dataset = new Dataset(taskNum);
       itemsPerRow = 5;
@@ -166,7 +167,10 @@ public class ProcessUnits {
       pher = new ArrayList<ArrayList<ArrayList<Double>>>();
         
       PrintWriter outlog = new PrintWriter("output_log.txt");
-
+      PrintWriter inputWriter = new PrintWriter("inputfile.txt");
+      for(int i =0; i < taskNum; i++)
+         inputWriter.write(String.valueOf(i) + "\n");
+      inputWriter.flush();
       StringBuilder qwsData = new StringBuilder();
       BufferedReader br = new BufferedReader(new FileReader("qws2_csv_normalised_4.csv"));
       String nextline = br.readLine();   
@@ -196,17 +200,19 @@ public class ProcessUnits {
 
 
       Configuration config = new Configuration();
+      FileSystem fs = FileSystem.get(config);
+      fs.copyFromLocalFile(true,true,new Path("./inputfile.txt"), new Path(args[0]));
       config.set("cost",pw1.toString());
       config.set("pher",pw2.toString());
       config.set("dataset",qwsData.toString());
       config.set("taskNum",String.valueOf(taskNum));
       // config.set("mapred.min.split.size","2");
       // config.set("mapred.max.split.size","2");
-      int itr = 2;
+      int itr = 20;
+      ArrayList<Double> bestValList = new ArrayList<Double>();
       for(int i = 0;i < itr; i++){
          double bestValSofarForCurrItr = 0;
          Job job = Job.getInstance(config, "testing_stuff");  
-         FileSystem fs = FileSystem.get(config);
          if (fs.exists(new Path(args[1]))) {
             fs.delete(new Path(String.valueOf(args[1])), true);
          }    
@@ -243,7 +249,7 @@ public class ProcessUnits {
           config.set("pher",pw2.toString());
           outlog.write("Iteration  " + i + ": BestFitness: " +bestValSofarForCurrItr);
           bestValSofar = Math.max(bestValSofar,bestValSofarForCurrItr);
-
+          bestValList.add(bestValSofar);
           outlog.write(" BestFitnessSoFar: " + bestValSofar);
           outlog.write("\n");
       }  

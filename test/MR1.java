@@ -103,7 +103,7 @@ public class MR1{
     }
 
     public static void main(String... args) throws IOException, InterruptedException, ClassNotFoundException{
-        int taskNum = 10;
+        int taskNum = 80;
         //Get Data
         Dataset dataset = new Dataset(taskNum);
         int rowsPerTask = dataset.getRowsPerTask();
@@ -177,7 +177,7 @@ public class MR1{
         config.set("taskNum",String.valueOf(taskNum));
         config.set("rowsPerTask",String.valueOf(rowsPerTask));
         config.set("itemsPerRow",String.valueOf(itemsPerRow));
-        int noOfItrs = 5;
+        int noOfItrs = 20;
         double maxFitness = 0;
         ArrayList<Double> fitnessData = new ArrayList<Double>();
         for(int itrs = 0; itrs < noOfItrs;itrs++ ){            
@@ -223,10 +223,12 @@ public class MR1{
                     }
                     StringTokenizer st = new StringTokenizer(value.toString()," ");
                     ArrayList<Integer> tempSol = new ArrayList<Integer>();
+                    int itr2 = 0;
                     while(st.hasMoreTokens()){
                         int val = Integer.parseInt(st.nextToken());
                         tempSol.add(val);
-                        newTotalList_hs.get(itr).add(val);
+                        newTotalList_hs.get(itr2).add(val);
+                        itr2++;
                     }
                     reducerOutput.add(tempSol);
                     itr++;
@@ -239,6 +241,7 @@ public class MR1{
                 is.close();
             }
             fitnessData.add(maxFitnessSoFar);
+            System.out.println("MaxFitnessSoFar: " + maxFitnessSoFar);
             maxFitness = Math.max(maxFitness,maxFitnessSoFar);
             for(HashSet<Integer> hs: newTotalList_hs){
                 ArrayList<Integer> tempList = new ArrayList<Integer>();
@@ -287,28 +290,19 @@ public class MR1{
                     if( r < beta){
                         if(prob.get(i).get(j) < th_prob){
                             newTotalList.get(i).add(j);
-                            // String out = new String();
-                            // out = totalids.get(i).get(j);
-                            // for(int k =0 ;k < 5;k++){
-                            //     out = out + totalList.get(i).get(j).get(k) + " ";
-                            // }
-                            // context.write(new IntWritable(i),new Text(out));
                         }
-                        // else{
-                        //     if(bestSol.get(i) == j){
-                        //         String out = new String();
-                        //         out = totalids.get(i).get(j);
-                        //         for(int k =0 ;k < 5;k++){
-                        //             out = out + totalList.get(i).get(j).get(k) + " ";
-                        //         }
-                        //         int testKey = Integer.parseInt(key.toString());
-                        //         context.write(new IntWritable(testKey),new Text(out));
-                        //     }
-                        // }
                     }
                 }
             }
             System.out.println("Guided Mutation Completed");
+           
+            //Repair Phase - Alg-4
+            for(int i =0 ;i < taskNum; i++){
+                if(newTotalList.get(i).size() < 0.3*totalList.get(i).size()){
+                    for(int j = 0; j < (0.3*totalList.get(i).size() - newTotalList.get(i).size()) ;j++)
+                        newTotalList.get(i).add((int)(Math.random()*totalList.get(i).size()));
+                }
+            }
             //generate new solutions
             
             pw = new PrintWriter("inputfile.txt");
@@ -338,8 +332,10 @@ public class MR1{
             pw.close();
             System.out.println("New Solutions generated");
         }
+        PrintWriter outputWriter = new PrintWriter("output_log.txt");
         for(double i : fitnessData)
-            System.out.println(i);
+            outputWriter.write(String.valueOf(i) + "\n");
+        outputWriter.flush();
         System.out.println("Max Fitness: " + maxFitness);
     }
 }
